@@ -1,4 +1,5 @@
 import Calendar from "../components/Calendar";
+import WeeklyOverview from "../components/WeeklyOverview";
 
 const Home = () => {
     return (
@@ -9,8 +10,12 @@ const Home = () => {
                 <p>Track your daily progress and build long lasting habits</p>
             </div>
             
-            <div>
+            <div className="pb-20">
                 <Calendar />
+            </div>
+
+            <div>
+                <WeeklyOverview />
             </div>
         </header>
         </>
