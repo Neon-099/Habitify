@@ -1,78 +1,85 @@
 import { useState } from "react";
-import {format, addDays, startOfWeek} from 'date-fns';
+import WeeklyCard from "./WeeklyCard.jsx";
+import WeeklyCardForm from "./WeeklyCardForm.jsx";
+import WeeklyProgress from "./WeeklyProgression.jsx";
+import {useStreakStore} from '../stores/cardStore.js'
 
 
 const WeeklyOverview = () => {
+
+    const {
+        updateStreakOnTaskComplete,
+        addCards,
+        updateCardDay,
+        cards
+    }  = useStreakStore();
+
+    console.log("Cards from store:", JSON.stringify(cards, null, 2));
+
     const [showForm, setShowForm] = useState(false);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
+    
+    const submitCard = (newCard ) => {
+        console.log("New card being submitted:", JSON.stringify(newCard, null, 2));
+        addCards(newCard)
+    }
 
-    //GET CURRENT WEEKS
-    const weekStart = startOfWeek(new Date(), {weekStartsOn: 1});
-    const days = Array.from({length: 7}, (_, i) => {
-        const date = addDays(weekStart, i)
-        return {
-            label: format(date, 'EEE', 'MMM d'),
-            date: format(date, 'yyyy-MM-dd'),
-        };
-    });
+    const toggleDayCheckbox = ( cardIndex, dayIndex) => {
+        updateCardDay(cardIndex, dayIndex)
+    }
 
+
+
+    //HANDLE CHECKBOXES TOGGLE
+    console.log(addCards)
 
     return (
         <div className="flex justify-center items-center flex-col ">
-            <div className="flex flex-row pb-9   items-center justify-between">
-                <h1 className="text-2xl text-start">Weekly Overview</h1>   
+            <div className="flex pb-9 justify-between">
+                <h1 className="text-2xl font-semibold">Weekly Overview</h1>   
                 <button 
                     className="mx-19 p-2 rounded-lg hover:bg-gray-400 bg-gray-300"
                     onClick={() => setShowForm(!showForm)}
                 >
-                    Add task
+                    Add habits
                 </button>
             </div>
             
-            <div className=" rounded-lg border w-full mx-auto max-w-xl"> 
+            
+            <div className="shadow-md rounded-lg w-full mx-auto max-w-xl overflow-hidden">
+                {/* HEADER ROW */}
+                <div className="flex justify-between items-center border-b bg-gray-50 p-3"> 
                 <span>Habit</span>
                 <span>Description</span>
+                <div className="gap-4 flex">
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                    <span>Sun</span>
+                </div>
+            </div>        
+            {cards.map((card, index) => (
+                <WeeklyCard 
+                    key={card.id || index}
+                    title={card.title}
+                    description={card.description}
+                    days={card.days}
+                    onToggle={(dayIndex) => toggleDayCheckbox(index, dayIndex)} 
+                    isLast={index === cards.length -1}/>
+                ))}
             </div>
-
+        
             {showForm && (
-                <form className="border ">
-                    <div className="flex flex-col border">
-                        <label>Title</label>
-                        <input 
-                        type="text"
-                        placeholder="title" 
-                        value={title}
-                        onChange={(e)=> setTitle(e.target.value)} 
-                    />
-                    </div>
-                    
-                    <div>
-                        <label>Description</label>
-                       <textarea
-                        type="text"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)} 
-                    /> 
-                    </div>
-                    
-                    <div>
-                        <label className="-block font-semibold mb-2">
-                            <div>
-                                {days.map((day, i) => (
-                                    <div key={i} className="flex items-center space-x-1">
-                                        <input type="checkbox" />
-                                    </div>
-                                ))} 
-                            </div>
-                        </label>
-                    </div>
-
-                    <button type="submit" className="bg-gray-300 text-black px-4 py-2">
-                        Submit
-                    </button>
-                </form>
+                <WeeklyCardForm 
+                    onSubmit={submitCard}
+                    onClose={() => setShowForm(false)}/>
             )}
+
+            <div>
+                <WeeklyProgress tasks={cards}/>
+            </div>
         </div>
     )
 }
