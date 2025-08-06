@@ -51,17 +51,17 @@ const isToday = (day) =>  //becuz if have {} it will return always as undefined
     currentYear === today.getFullYear();
 
     return (
-        <div className="flex justify-center items-center flex-col w-full mx-auto max-w-md">
-            <div className="flex flex-row justify-between items-center mb-4">
+        <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-6">
+            <div className="flex flex-row justify-between items-center mb-6">
                 {/*HEADER*/}
-                <div className="pr-8 py-3">
+                <div className="pr-4 sm:pr-8">
                     <button
                         onClick={handleCurrentChange} 
-                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded">
-                        <img src={left} alt="" />
+                        className="p-2 sm:p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <img src={left} alt="Previous month" className="w-4 h-4" />
                     </button>
                 </div>
-                <h2 className="text-2xl w-38  text-center">
+                <h2 className="text-lg sm:text-2xl font-semibold text-gray-900 text-center flex-1">
                 {new Date(currentYear, currentMonth).toLocaleDateString('default',
                     {   
                         month: 'long',
@@ -69,25 +69,28 @@ const isToday = (day) =>  //becuz if have {} it will return always as undefined
                     }
                 )}
                 </h2>
-                <div className="px-3">
+                <div className="pl-4 sm:pl-8">
                     <button
                         onClick={handleMonthChange} 
-                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded">
-                        <img src={right} alt="" />
+                        className="p-2 sm:p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <img src={right} alt="Next month" className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2 text-center items-center py-5">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center items-center">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div key={day} className="font-bold text-sm text-gray-500">
+                    <div key={day} className="font-semibold text-xs sm:text-sm text-gray-500 py-2">
                         {day}
                     </div>
                 ))}
                 {daysArray.map((day, index) => (
-                    <div key={index} className={`h-10 w-10 flex items-center justify-center rounded-full ${
+                    <div key={index} className={`h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-sm sm:text-base font-medium transition-colors ${
                         isToday(day) 
-                            ? 'bg-blue-500' : 'bg-white'
+                            ? 'bg-indigo-500 text-white shadow-md' 
+                            : day 
+                                ? 'hover:bg-gray-100 text-gray-700' 
+                                : 'text-transparent'
                     }`}>
                         {day || ''}
                     </div>
