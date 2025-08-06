@@ -3,21 +3,24 @@ import WeeklyOverview from "../components/WeeklyOverview";
 
 const Home = () => {
     return (
-        <>
-        <header>
-            <div className="py-9 px-30 flex flex-col justify-center items-start ">
-                <h1 className="text-4xl py-8 font-semibold">My Habits</h1>
-                <p className="text-[#639154]">Track your daily progress and build long lasting habits</p>
+        <div className="min-h-screen bg-gray-50">
+            <div className="container-responsive">
+                <header className="py-6 sm:py-9">
+                    <div className="flex flex-col justify-center items-start space-y-4">
+                        <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900">My Habits</h1>
+                        <p className="text-lg text-[#639154]">Track your daily progress and build long lasting habits</p>
+                    </div>
+                </header>
+                
+                <div className="pb-8 sm:pb-20">
+                    <Calendar />
+                </div>
+                
+                <div className="pb-8">
+                    <WeeklyOverview />
+                </div>
             </div>
-            
-            <div className="pb-20">
-                <Calendar />
-            </div>
-            <div>
-                <WeeklyOverview />
-            </div>
-        </header>
-        </>
+        </div>
     )
 }
 
