@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useStreakStore } from '../stores/cardStore';
+import { useStreakStore, getFrequencyByDate } from '../stores/cardStore';
 
 const timeRanges = [
   { label: 'Week', value: 'week' },
@@ -14,21 +14,38 @@ export const HabitProgress = () => {
 
     const {cards} = useStreakStore();
 
+    // Safe array handling
+    const safeCards = Array.isArray(cards) ? cards : [];
+
     //RESTRUCTURING TO BECOME DATA
-    const habitNames = cards.map(card => card.title);
-    const allDates = [...new Set(cards.flatMap(card => card.days.map(day => day.date)))].sort();
+    const allDays = safeCards.flatMap(task => Array.isArray(task.days) ? task.days : []);
 
-    const data = allDates.map(date => {
-        const entry = {date};
-        cards.forEach(card => {
-            const day = card.days.find(d => d.date === date);
-            entry[card.title] = day && day.checked ? 1 : 0;
-        });
-        return entry;
+    const filterDates = allDays.filter((dateStr) => {
+      const frequency = getFrequencyByDate(dateStr);
+      return (
+        (selectedRange === 'week' && frequency === 'weekly') || 
+        (selectedRange === 'month' && frequency === 'monthly') ||
+        (selectedRange === 'year' && frequency === 'yearly')
+      );
+    });
+
+    
+    const data = Array.isArray(filterDates) 
+  ? filterDates.map(date => {
+      const entry = { date };
+      safeCards.forEach(card => {
+        const day = card.days && card.days.find(d => d.date === date);
+        entry[card.title] = day && day.checked ? 1 : 0;
+      });
+      return entry;
     })
+  : []; // fallback empty array
+      
+console.log("type of data", typeof data);
+console.log("data", data);
 
-    console.log(data)
-  return (
+
+    return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 w-full">
       <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Habit Progress</h2>
@@ -54,7 +71,7 @@ export const HabitProgress = () => {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
-              {cards.map((card) => (
+              {safeCards.map((card) => (
                 <linearGradient key={card.id} id={`color-${card.id}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={card.color} stopOpacity={0.3}/>
                   <stop offset="95%" stopColor={card.color} stopOpacity={0.1}/>
@@ -87,7 +104,7 @@ export const HabitProgress = () => {
               }}
             />
             <Legend />
-            {cards.map((card) => (
+            {safeCards.map((card) => (
               <Area 
                 key={card.id}
                 type="monotone"

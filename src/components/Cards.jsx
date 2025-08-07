@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useMemo} from 'react';
 import {useStreakStore} from '../stores/cardStore.js'
 
 
@@ -57,8 +57,10 @@ const getWeekRange = (offset = 0) => {
 export const CompletionRateCard = () => {
     const {cards} = useStreakStore();
 
-    const allDays = cards.flatMap(task => task.days || []);
-    const completedCount = allDays.filter(task => task.checked).length;
+    // Safe array handling
+    const safeCards = Array.isArray(cards) ? cards : [];
+    const allDays = safeCards.flatMap(task => Array.isArray(task.days) ? task.days : []);
+    const completedCount = allDays.filter(task => task && task.checked).length;
     const total = allDays.length
     const rawProgress = total === 0 ? 0 : (completedCount / total ) * 100
     const progressionRate = Math.min(rawProgress, 100); 
@@ -68,12 +70,16 @@ export const CompletionRateCard = () => {
     const getCompletedCountByWeek = (cards, weekDates) => {
         let count = 0;
 
+        if (!Array.isArray(cards)) return count;
+
         cards.forEach(card => { //ITERATE CARD then..
-            card.days.forEach(day => { //after get card, next is days
-                if(day.checked && weekDates.includes(day.date)) {
-                    count++;
-                }
-            });
+            if (card && Array.isArray(card.days)) {
+                card.days.forEach(day => { //after get card, next is days
+                    if(day && day.checked && weekDates.includes(day.date)) {
+                        count++;
+                    }
+                });
+            }
         });
         return count; //to use later on
     };
@@ -81,8 +87,8 @@ export const CompletionRateCard = () => {
     const thisWeekDates = getWeekRange(); 
     const lastWeekDates = getWeekRange(1);
 
-    const thisWeekCompleted = getCompletedCountByWeek(cards, thisWeekDates);
-    const lastWeekCompleted = getCompletedCountByWeek(cards, lastWeekDates);
+    const thisWeekCompleted = getCompletedCountByWeek(safeCards, thisWeekDates);
+    const lastWeekCompleted = getCompletedCountByWeek(safeCards, lastWeekDates);
 
     const [weekCompleted, setWeekCompleted] = useState(false);
 
@@ -129,27 +135,27 @@ export const ActiveTasks = () => {
 
     const [activeTask, setActiveTask] = useState(0);
 
+    // Safe array handling with useMemo to prevent unnecessary re-renders
+    const safeCards = useMemo(() => Array.isArray(cards) ? cards : [], [cards]);
+
     useEffect(() => {           //to match only the specific condition
-        const completedCards = cards.filter((card) => //fil: collects only the card where all days are checked 
-            card.days.every((day) => day.checked) //check, then it will return as true
+        const completedCards = safeCards.filter((card) => //fil: collects only the card where all days are checked 
+            card && Array.isArray(card.days) && card.days.every((day) => day && day.checked) //check, then it will return as true
         );
 
         setActiveTask(completedCards.length);
-    }, [cards])
+    }, [safeCards])
 
     
     //TRACKS CREATED TASKS
-    const isDateInWeek = (dateStr, weekDates) => {
-        return weekDates.includes(dateStr);
-    }
-
     const getNewCardsInWeek = (cards, weekDates) => {
-        return cards.filter(card => weekDates.includes(card.createdAt.split("T")[0]))
+        if (!Array.isArray(cards)) return [];
+        return cards.filter(card => card && card.createdAt && weekDates.includes(card.createdAt.split("T")[0]))
     }
 
     const thisWeekDates = getWeekRange(0);
 
-    const newCards = getNewCardsInWeek(cards, thisWeekDates);
+    const newCards = getNewCardsInWeek(safeCards, thisWeekDates);
     const newCardsCount = newCards.length;
 
     return (
@@ -169,7 +175,7 @@ export const ActiveTasks = () => {
                     </div>
                 </div>
                 <p className='text-2xl sm:text-3xl font-bold text-gray-800 mb-2'>
-                    {cards.length - activeTask} 
+                    {safeCards.length - activeTask} 
                 </p>
                 <div className="flex items-center text-xs sm:text-sm">
                     <span className="text-green-500 mr-1">+</span>
