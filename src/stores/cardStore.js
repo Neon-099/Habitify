@@ -17,13 +17,13 @@ const generateColor = (index) => {
 };
 
 //FREQUENCY TRACKERS(WEEKLY, MONTHLY, YEARLY)
-const getFrequencyByDate = (dateString) => {
+export const getFrequencyByDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
 
     const isSameWeek = (d1, d2) => {
         const startOfWeek = (d) => {
-            const day = d.getDate();
+            const day = d.getDay();
             const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.getFullYear(), d.getMonth(), diff)
         }
@@ -38,13 +38,31 @@ const getFrequencyByDate = (dateString) => {
     return "yearly";
 }
 
+//TO GENERATE DAYS FOR THE CURRENT WEEK
+const generateDaysForFrequency = (frequency) => {
+    const days = [];
+    const today = new Date();
+    if(frequency === "weekly") {
+        //GET START OF WEEK(sunday)
+        const start = new Date(today);
+        start.setDate(today.getDate() - today.getDay());
+        for(let i = 0; i < 7; i++) {
+            const date = new Date(start);
+            date.setDate(start.getDate() + i);
+            days.push({date: date.toISOString().split('T')[0], checked: false});
+        }
+    }
+    //ADD LOGIC FOR MONTHLY/YEARLY 
+    return days;
+}
+
 export const useStreakStore = create(
     persist(
         (set, get) => ({
+            cards: [], // Initialize cards array
             streak: 0,
             highestStreak: 0,
             lastCompletedDate: '',
-            cards: [],
 
             updateStreakOnTaskComplete: () => {
                 const today = getTodayDate();
@@ -76,6 +94,7 @@ export const useStreakStore = create(
                     const index = state.cards.length;
                     const createdAt = new Date().toISOString();
                     const frequency = getFrequencyByDate(createdAt);
+                    const days = generateDaysForFrequency(frequency)
 
                     const newCard = {
                         ...card,
@@ -83,6 +102,8 @@ export const useStreakStore = create(
                         createdAt: new Date().toISOString(),
                         color: generateColor(index),
                         frequency,
+                        lastCompletedDate: '', 
+                        days,
                     };
                     return {
                         cards:[...state.cards, newCard],
@@ -90,32 +111,41 @@ export const useStreakStore = create(
                 }),
 
             //UPDATE CARD DAYS
-            updateCardDay: (cardIndex, dayIndex) => set((state) => ({
-                cards: state.cards.map((card, i) => 
-                    i === cardIndex ? {
-                        ...card,
-                        days: card.days.map((day, j) => 
-                            j === dayIndex ? {...day, checked: !day.checked} : day
-                        ),
-                    }
-                    : card
-                )
+            completedCardToday: (cardIndex) => set((state) => {
+                const today = getTodayDate();
+                return {
+                    cards: state.cards.map((card, index) => 
+                        index === cardIndex && card.lastCompletedDate !== today
+                            ? {
+                                ...card, lastCompletedDate: today,
+                            } 
+                        : card
+                    )
+                }
+            }),
+            //UPDATE CARD DAY CHECKED STATE
+            updateCardDay: (cardIndex, dayIndex) => set((state) => {
+                return {
+                    cards: state.cards.map((card, cIdx) => {
+                        if (cIdx !== cardIndex) return card;
+                        return {
+                            ...card,
+                            days: card.days.map((day, dIdx) =>
+                                dIdx === dayIndex ? { ...day, checked: !day.checked } : day
+                            )
+                        };
+                    })
+                };
+            }),
+
+            //DELETE CARD
+            deleteCard: (cardId) => set((state) => ({
+                cards: state.cards.filter((card) => card.id !== cardId) //filter: includes the items that do not match
             }))
         }),
-            //MIGRATION
-         {
+        {
             name: 'streak-storage',
             // Add migration to fix existing data
-            migrate: (persistedState, version) => {
-                if (persistedState && persistedState.cards) {
-                    // Ensure all existing cards have days property
-                    persistedState.cards = persistedState.cards.map(card => ({
-                        ...card,
-                        days: card.days || []
-                    }));
-                }
-                return persistedState;
-            }
         }
     )
 )
