@@ -19,7 +19,7 @@ const WeeklyCard = ( {title, description, days, onToggle, isLast} ) => {
     }
 
     return (
-        <div className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 ${!isLast ? 'border-b border-gray-200' : ''} hover:bg-gray-50 transition-colors`}>
+        <div className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 hover:bg-gray-50 transition-colors`}>
             <div className="flex-1 mb-2 sm:mb-0">
                 <h3 className="text-sm sm:text-base font-medium text-gray-900">{title}</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:hidden">{description}</p>
