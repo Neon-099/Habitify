@@ -26,7 +26,6 @@ const Header = () => {
                     isActive ? `text-indigo-600 font-medium` : `text-black hover:text-indigo-600 transition-colors`}>
                 Dashboard
             </NavLink>
-            <NavLink to="" className='text-black hover:text-indigo-600 transition-colors'>Settings</NavLink>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -65,13 +64,6 @@ const Header = () => {
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Dashboard
-                    </NavLink>
-                    <NavLink 
-                        to="" 
-                        className="px-4 py-3 text-black hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                    >
-                        Settings
                     </NavLink>
                 </nav>
             </div>

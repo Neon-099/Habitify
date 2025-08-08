@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useStreakStore, getFrequencyByDate } from '../stores/cardStore';
+import { useStreakStore } from '../stores/cardStore';
 
 const timeRanges = [
   { label: 'Week', value: 'week' },
@@ -8,41 +8,70 @@ const timeRanges = [
   { label: 'Year', value: 'year' },
 ];
 
+// Helper function to generate date ranges
+const generateDateRange = (range) => {
+  const today = new Date();
+  const dates = [];
+  
+  if (range === 'week') {
+    // Generate last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+  } else if (range === 'month') {
+    // Generate last 30 days
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+  } else if (range === 'year') {
+    // Generate last 12 months (monthly data points)
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today);
+      date.setMonth(today.getMonth() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+  }
+  
+  return dates;
+};
 
 export const HabitProgress = () => {
     const [selectedRange, setSelectedRange] = useState('week');
-
-    const {cards} = useStreakStore();
+    const { cards } = useStreakStore();
 
     // Safe array handling
     const safeCards = Array.isArray(cards) ? cards : [];
 
-    //RESTRUCTURING TO BECOME DATA
-    const allDays = safeCards.flatMap(task => Array.isArray(task.days) ? task.days : []);
-
-    const filterDates = allDays.filter((dateStr) => {
-      const frequency = getFrequencyByDate(dateStr);
-      return (
-        (selectedRange === 'week' && frequency === 'weekly') || 
-        (selectedRange === 'month' && frequency === 'monthly') ||
-        (selectedRange === 'year' && frequency === 'yearly')
-      );
-    });
-
-    
-    const data = Array.isArray(filterDates) 
-  ? filterDates.map(date => {
-      const entry = { date };
-      safeCards.forEach(card => {
-        const day = card.days && card.days.find(d => d.date === date);
-        entry[card.title] = day && day.checked ? 1 : 0;
-      });
-      return entry;
-    })
-  : []; // fallback empty array
-      
-console.log("type of data", typeof data);
-console.log("data", data);
+    // Generate chart data based on selected range
+    const chartData = useMemo(() => {
+        const dateRange = generateDateRange(selectedRange);
+        
+        return dateRange.map(date => {
+            const entry = { 
+                date,
+                // Format date for display
+                displayDate: selectedRange === 'year' 
+                    ? new Date(date).toLocaleDateString('en-US', { month: 'short' })
+                    : new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            };
+            
+            // Add data for each card
+            safeCards.forEach(card => {
+                if (card.days && Array.isArray(card.days)) {
+                    const day = card.days.find(d => d.date === date);
+                    entry[card.title] = day && day.checked ? 1 : 0;
+                } else {
+                    entry[card.title] = 0;
+                }
+            });
+            
+            return entry;
+        });
+    }, [safeCards, selectedRange]);
 
 
     return (
@@ -68,56 +97,63 @@ console.log("data", data);
       
       {/* Chart Container */}
       <div className="w-full h-64 sm:h-80 lg:h-96">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              {safeCards.map((card) => (
-                <linearGradient key={card.id} id={`color-${card.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={card.color} stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor={card.color} stopOpacity={0.1}/>
-                </linearGradient>
-              ))}
-            </defs>
-            <XAxis 
-              dataKey="date" 
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              }}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'white', 
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-              labelFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
-                });
-              }}
-            />
-            <Legend />
-            {safeCards.map((card) => (
-              <Area 
-                key={card.id}
-                type="monotone"
-                dataKey={card.title}
-                stroke={card.color}
-                fill={`url(#color-${card.id})`}
-                strokeWidth={2}
-                dot={{ fill: card.color, strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: card.color, strokeWidth: 2 }}
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                {safeCards.map((card) => (
+                  <linearGradient key={card.id} id={`color-${card.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={card.color} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={card.color} stopOpacity={0.1}/>
+                  </linearGradient>
+                ))}
+              </defs>
+              <XAxis 
+                dataKey="displayDate" 
+                tick={{ fontSize: 12 }}
+                interval="preserveStartEnd"
               />
-            ))}
-          </AreaChart>
-        </ResponsiveContainer>
+              <YAxis 
+                tick={{ fontSize: 12 }}
+                domain={[0, 1]}
+                ticks={[0, 1]}
+                tickFormatter={(value) => value === 1 ? 'Done' : 'Not Done'}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '12px'
+                }}
+                labelFormatter={(value, payload) => {
+                  if (payload && payload[0]) {
+                    return payload[0].payload.date;
+                  }
+                  return value;
+                }}
+                formatter={(value, name) => [value === 1 ? 'Completed' : 'Not Completed', name]}
+              />
+              <Legend />
+              {safeCards.map((card) => (
+                <Area 
+                  key={card.id}
+                  type="monotone"
+                  dataKey={card.title}
+                  stroke={card.color}
+                  fill={`url(#color-${card.id})`}
+                  strokeWidth={2}
+                  dot={{ fill: card.color, strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: card.color, strokeWidth: 2 }}
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <p>No data available for the selected time range</p>
+          </div>
+        )}
       </div>
     </div>
   );
