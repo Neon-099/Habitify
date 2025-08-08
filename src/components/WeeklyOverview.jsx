@@ -46,22 +46,21 @@ const WeeklyOverview = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {cards.map((card, cardIdx) => {
-                    const allChecked = card.days && card.days.length > 0 && card.days.every(day => day.checked);
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayIndex = card.days ? card.days.findIndex(day => day.date === today) : -1;
+                    const isTodayChecked = todayIndex >= 0 && card.days[todayIndex]?.checked;
+                    
                     return (
                         <TaskCard
                             key={card.id}
                             title={card.title}
                             description={card.description}
                             color={card.color}
-                            checked={allChecked}
+                            checked={isTodayChecked}
                             onToggle={() => {
-                                // Toggle all days for this card
-                                if (card.days && card.days.length > 0) {
-                                    card.days.forEach((day, dayIdx) => {
-                                        if (!day.checked) {
-                                            updateCardDay(cardIdx, dayIdx);
-                                        }
-                                    });
+                                // Only toggle today's day
+                                if (todayIndex >= 0) {
+                                    updateCardDay(cardIdx, todayIndex);
                                 }
                             }}
                             onDelete={() => deleteCard(card.id)}

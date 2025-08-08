@@ -1,6 +1,6 @@
 
 
-const WeeklyCard = ( {title, description, days, onToggle, isLast} ) => {
+const WeeklyCard = ( {title, description, days, onToggle, onDelete, isLast} ) => {
      // Add safety check
     if (!days || !Array.isArray(days)) {
         console.error("WeeklyCard received invalid days prop:", days);

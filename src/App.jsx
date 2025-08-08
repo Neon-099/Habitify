@@ -1,6 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Header from './components/Header.jsx'
+import Header from './ui/Header.jsx'
 import Home from './pages/Home.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 
